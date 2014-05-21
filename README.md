@@ -1,0 +1,1 @@
+mmi path/to/doc
