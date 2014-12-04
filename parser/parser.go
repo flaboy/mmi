@@ -10,26 +10,33 @@ import (
 	"strings"
 )
 
-type pathway []string
-type Node struct {
-	filepath string
-	Title    string
-	Path     pathway
-	PathNode []*Node
-	IsPage   bool
-	Child    []*Node
-	next     *Node
-	prev     *Node
-}
+type (
+	pathway []string
+	Node    struct {
+		filepath string
+		Title    string
+		Path     pathway
+		PathNode []*Node
+		IsPage   bool
+		Child    []*Node
+		next     *Node
+		prev     *Node
+	}
+)
 
 var current_node *Node
+
+const (
+	readme_md  = "README.md"
+	summary_md = "SUMMARY.md"
+)
 
 func Open(dirname string) Node {
 	return opendir(dirname, pathway{}, []*Node{})
 }
 
-func (n *Node) UpdateReadme(depth int64) {
-	n.update_readme(depth, 0)
+func (n *Node) UpdateRummary(depth int64) {
+	n.update_summary(depth, 0)
 }
 
 func (n *Node) link(target *Node) interface{} {
@@ -38,7 +45,7 @@ func (n *Node) link(target *Node) interface{} {
 	} else {
 		link := strings.Join(target.Path, "/")
 		if target.IsPage == false {
-			link += "/"
+			link += "/README.md"
 		}
 		return map[string]string{
 			"path":  link,
@@ -95,30 +102,23 @@ func (c *Node) navpath() []interface{} {
 	return links
 }
 
-func (n *Node) update_readme(depth, st int64) {
-	fmt.Println("[U]", n.filepath+"/README.md")
-	f, err := os.OpenFile(n.filepath+"/README.md", os.O_CREATE|os.O_RDWR, 0644)
+func (n *Node) update_summary(depth, st int64) {
+	fmt.Println("[U]", n.filepath+"/"+summary_md)
+	f, err := os.OpenFile(n.filepath+"/"+summary_md, os.O_CREATE|os.O_RDWR, 0644)
 
 	if err != nil {
 		panic(err)
 	}
-	r := bufio.NewReader(f)
-	l, err := r.ReadString('\n')
 
-	if err != nil {
-		f.Seek(0, 2)
-		f.Write([]byte("\n"))
-	} else {
-		size := int64(len([]byte(l)))
-		f.Seek(size, 0)
-		f.Truncate(size)
-	}
-	f.Write([]byte("\n" + n.TocMarkdown(depth, st, "")))
+	f.Truncate(0)
+	f.WriteString(n.Title)
+	f.WriteString("\n================================================\n\n")
+	f.Write([]byte(n.TocMarkdown(depth, st, "")))
 	f.Close()
 
 	for _, c := range n.Child {
 		if c.IsPage == false {
-			c.update_readme(depth, st+1)
+			c.update_summary(depth, st+1)
 		}
 	}
 }
@@ -128,7 +128,7 @@ func (n *Node) TocMarkdown(depth, st int64, prefix string) (s string) {
 	for _, c := range n.Child {
 		filepath := strings.Join(c.Path[st:], "/")
 		if c.IsPage == false {
-			filepath += "/"
+			filepath += "/" + readme_md
 		}
 
 		s += fmt.Sprintf("%s1. [%s](%s)\n", prefix, c.Title, filepath)
@@ -157,7 +157,7 @@ func opendir(dirname string, p pathway, pn []*Node) Node {
 	link_node(&n)
 	pn = append(pn, &n)
 
-	n.Title = get_title(dirname + "/README.md")
+	n.Title = get_title(dirname + "/" + readme_md)
 
 	var subnode *Node
 	if err == nil {
@@ -166,9 +166,9 @@ func opendir(dirname string, p pathway, pn []*Node) Node {
 			fpath := dirname + "/" + fname
 			subpath := append(p, fname)
 			subnode = nil
-			if fname[0] != '.' && fname != "README.md" {
+			if fname[0] != '.' && fname != readme_md && fname != summary_md {
 				if f.Mode().IsDir() {
-					_, err = os.Stat(fpath + "/README.md")
+					_, err = os.Stat(fpath + "/" + readme_md)
 					if err == nil {
 						new_node := opendir(fpath, subpath, pn)
 						subnode = &new_node

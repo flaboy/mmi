@@ -17,7 +17,7 @@ func main() {
 		if toc_mode {
 			n.UpdateJson()
 		} else {
-			n.UpdateReadme(2)
+			n.UpdateRummary(2)
 		}
 	}
 }
