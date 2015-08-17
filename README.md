@@ -49,7 +49,7 @@
 
 ## 使用技巧
 
-* 支持中文文件名与目录名,  但建议应为为先.
+* 支持中文文件名与目录名,  但建议英文为先.
 * 文档用到的图片, 如果是自己做的, 尽量产生一份同名的``pdf``格式. -tex会自动查找``a.pdf``来替换``a.jpg/a.png/a.gif``. 所有的素材都是矢量, 最终pdf文档才足够精美.
 * 如果你会写Makefile, 自动化你的文档过程吧, [像这样](https://github.com/shopex/prism-doc/blob/master/Makefile).
 
