@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -164,7 +165,7 @@ func opendir(dirname string, p pathway, pn []*Node) Node {
 		for _, f := range flist {
 			fname := f.Name()
 			fpath := dirname + "/" + fname
-			subpath := append(p, fname)
+			subpath := append(p, url.QueryEscape(fname))
 			subnode = nil
 			if fname[0] != '.' && fname != readme_md && fname != summary_md {
 				if f.Mode().IsDir() {
