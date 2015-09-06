@@ -7,12 +7,62 @@ import (
 
 func html_render(w io.Writer, html []byte) error {
 
-	tpl := `<html>
+	tpl := `<!DOCTYPE html>
+  <html>
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>{{.title}}</title>
+  <title></title>
+  <script src="/script" ></script>
+  <script>
+  function setSize(){
+    var left_w = 250;
+
+    var workground_h = $(window).height();
+    var workground_w = $(window).width();
+
+    $('#sidemenu').width(left_w).height(workground_h).offset({top:0, left:0});
+}
+
+function update(f_url, target){
+    $.ajax({
+      url: f_url
+    }).success(function(data) {
+      $(target).html(data);
+      if(target=="#sidemenu"){
+        $('#sidemenu a').each(function(i,a){
+            var addr = $(a).attr('href');
+            var first_char = String(addr).substr(0,1);
+            if(first_char!='#'){
+              if(first_char=='/'){
+                addr = String(addr).substr(1);
+              }
+                var nurl = "/" + addr;
+                $(a).attr('href', nurl);
+                if(nurl==window.location.pathname){
+                    $(a).addClass("active");
+                }
+            }
+        });
+      }else{
+        window.document.title = $('#main h1').html();
+      }
+      setTimeout(function(){update(f_url, target)}, 1000)
+    });
+}
+
+var current_path = window.location.pathname;
+
+$(function(){
+    window.document.title = $('#main h1').html();
+    setSize();
+    $(window).bind("resize", setSize);
+    update("/SUMMARY.md?one=true", "#sidemenu");
+    update(current_path+"?one=true", "#main");
+})
+  </script>
 <style>
-#main{max-width:800px}
+#sidemenu{width:250px;border-right:2px solid #f0f0f0;position:fixed;overflow:scroll;z-index:99;background:#fff}
+#main{max-width:700px;margin-left:280px;z-index:0}
 .doc-style{padding:20px}
 @font-face {
   font-family: octicons-anchor;
@@ -654,6 +704,7 @@ func html_render(w io.Writer, html []byte) error {
     </style>
     </head>
     <body>
+    <div class="doc-style" id="sidemenu"></div>
     <div class="doc-style" id="main">{{.body}}</div>
     </body>
     </html>`

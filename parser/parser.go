@@ -106,18 +106,23 @@ func (c *Node) navpath() []interface{} {
 }
 
 func (n *Node) update_summary(depth, st int64) {
-	fmt.Println("[U]", n.filepath+"/"+summary_md)
-	f, err := os.OpenFile(n.filepath+"/"+summary_md, os.O_CREATE|os.O_RDWR, 0644)
+	_, err := os.Lstat(n.filepath + "/" + summary_md + ".skip")
+	if err == nil {
+		fmt.Println("[S]", n.filepath+"/"+summary_md)
+	} else {
+		fmt.Println("[U]", n.filepath+"/"+summary_md)
+		f, err := os.OpenFile(n.filepath+"/"+summary_md, os.O_CREATE|os.O_RDWR, 0644)
 
-	if err != nil {
-		panic(err)
+		if err != nil {
+			panic(err)
+		}
+
+		f.Truncate(0)
+		f.WriteString(n.Title)
+		f.WriteString("\n================================================\n\n")
+		f.Write([]byte(n.TocMarkdown(depth, st, "")))
+		f.Close()
 	}
-
-	f.Truncate(0)
-	f.WriteString(n.Title)
-	f.WriteString("\n================================================\n\n")
-	f.Write([]byte(n.TocMarkdown(depth, st, "")))
-	f.Close()
 
 	for _, c := range n.Child {
 		if c.IsPage == false {

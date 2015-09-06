@@ -15,7 +15,6 @@ func err_f(code int, w http.ResponseWriter, req *http.Request) {
 }
 
 func handler(w http.ResponseWriter, req *http.Request) {
-	log.Println(req.URL.Path)
 
 	try_files := []string{"README.md",
 		"index.md", "INDEX.md", "index.html", "index.htm"}
@@ -58,8 +57,11 @@ func handler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		html_code := to_html(buf)
-
-		html_render(w, html_code)
+		if req.FormValue("one") == "true" {
+			w.Write(html_code)
+		} else {
+			html_render(w, html_code)
+		}
 		return
 	}
 
@@ -71,6 +73,7 @@ func handler(w http.ResponseWriter, req *http.Request) {
 }
 
 func start_server(workdir string) {
+	http.HandleFunc("/script", jquery_handler)
 	http.HandleFunc("/", handler)
 	err := http.ListenAndServe(":10080", nil)
 	if err != nil {
