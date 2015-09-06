@@ -55,7 +55,8 @@
 
 ## 获得mmi
 
-* 已编译版本
-    * mac用户(>=10.10.4, Yosemite), 在此下载 http://pan.baidu.com/s/1jGjGJDc
+* 已编译版本  http://pan.baidu.com/s/1hqnPpXU
+    * mac用户(>=10.10.4, Yosemite)
+    * windows
 * 如果你有go的环境, 可以从源码安装.
     * ```go install github.com/flaboy/mmi```
