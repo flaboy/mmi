@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -151,6 +153,29 @@ func link_node(n *Node) {
 	}
 }
 
+type f_sorter struct {
+	ls []os.FileInfo
+}
+
+func (s *f_sorter) Len() int {
+	return len(s.ls)
+}
+
+func (s *f_sorter) Swap(i, j int) {
+	s.ls[i], s.ls[j] = s.ls[j], s.ls[i]
+}
+
+func (s *f_sorter) i(f os.FileInfo) (i int64) {
+	if pos := strings.Index(f.Name(), "."); pos > 0 {
+		i, _ = strconv.ParseInt(f.Name()[0:pos], 10, 0)
+	}
+	return
+}
+
+func (s *f_sorter) Less(i, j int) bool {
+	return s.i(s.ls[i]) < s.i(s.ls[j])
+}
+
 func opendir(dirname string, p pathway, pn []*Node) Node {
 	flist, err := ioutil.ReadDir(dirname)
 
@@ -161,8 +186,17 @@ func opendir(dirname string, p pathway, pn []*Node) Node {
 	n.Title = get_title(dirname + "/" + readme_md)
 
 	var subnode *Node
+
+	fs := f_sorter{}
+
 	if err == nil {
 		for _, f := range flist {
+			fs.ls = append(fs.ls, f)
+		}
+
+		sort.Sort(&fs)
+
+		for _, f := range fs.ls {
 			fname := f.Name()
 			fpath := dirname + "/" + fname
 			subpath := append(p, url.QueryEscape(fname))
