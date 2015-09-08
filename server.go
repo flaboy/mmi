@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/flaboy/mmi/parser"
 	"github.com/russross/blackfriday"
 	"io"
 	"io/ioutil"
@@ -57,10 +59,15 @@ func handler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		html_code := to_html(buf)
-		if req.FormValue("one") == "true" {
+
+		if req.FormValue("one") != "" {
+			if req.FormValue("one") != "summary" {
+				script := fmt.Sprintf("<script>set_path_ipt(\"%s\");</script>", filepath)
+				html_code = append([]byte(script), html_code...)
+			}
 			w.Write(html_code)
 		} else {
-			html_render(w, html_code)
+			html_render(w, filepath, html_code)
 		}
 		return
 	}
@@ -72,8 +79,19 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	io.Copy(w, fd)
 }
 
+func rebuild_handler(w http.ResponseWriter, req *http.Request) {
+	log.Println("Reindex SRUMMARY.md")
+	n := parser.Open(global_workdir)
+	n.UpdateRummary(5)
+	w.Write([]byte("ok"))
+}
+
+var global_workdir string
+
 func start_server(workdir string) {
-	http.HandleFunc("/script", jquery_handler)
+	global_workdir = workdir
+	http.HandleFunc("/!rebuild", rebuild_handler)
+	http.HandleFunc("/!script", jquery_handler)
 	http.HandleFunc("/", handler)
 	err := http.ListenAndServe(":10080", nil)
 	if err != nil {

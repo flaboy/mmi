@@ -49,7 +49,7 @@ func main() {
 	}
 
 	if summary_mode {
-		n.UpdateRummary(2)
+		n.UpdateRummary(5)
 		return
 	}
 

@@ -5,17 +5,17 @@ import (
 	"text/template"
 )
 
-func html_render(w io.Writer, html []byte) error {
+func html_render(w io.Writer, filepath string, html []byte) error {
 
 	tpl := `<!DOCTYPE html>
   <html>
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title></title>
-  <script src="/script" ></script>
+  <script src="/!script" ></script>
   <script>
   function setSize(){
-    var left_w = 250;
+    var left_w = 300;
 
     var workground_h = $(window).height();
     var workground_w = $(window).width();
@@ -23,13 +23,28 @@ func html_render(w io.Writer, html []byte) error {
     $('#sidemenu').width(left_w).height(workground_h).offset({top:0, left:0});
 }
 
+function rebuild_index(){
+    $('#reindex_btn').attr('disabled','disabled');
+    $.ajax({
+      url: "/!rebuild"
+    }).complete(function(){
+      $('#reindex_btn').removeAttr('disabled');
+    });
+}
+
+function set_path_ipt(fpath){
+  if($('#current_path_ipt').val()!=fpath){
+    $('#current_path_ipt').val(fpath);
+  }
+}
+
 function update(f_url, target){
     $.ajax({
       url: f_url
     }).success(function(data) {
       $(target).html(data);
-      if(target=="#sidemenu"){
-        $('#sidemenu a').each(function(i,a){
+      if(target=="#sidemenu-body"){
+        $('#sidemenu-body a').each(function(i,a){
             var addr = $(a).attr('href');
             var first_char = String(addr).substr(0,1);
             if(first_char!='#'){
@@ -38,15 +53,16 @@ function update(f_url, target){
               }
                 var nurl = "/" + addr;
                 $(a).attr('href', nurl);
-                if(nurl==window.location.pathname){
+                if(nurl==current_path){
                     $(a).addClass("active");
                 }
             }
         });
+        setTimeout(function(){update(f_url, target)}, 1000)
       }else{
         window.document.title = $('#main h1').html();
+        setTimeout(function(){update(current_path+"?one=true", target)}, 1000)
       }
-      setTimeout(function(){update(f_url, target)}, 1000)
     });
 }
 
@@ -56,13 +72,23 @@ $(function(){
     window.document.title = $('#main h1').html();
     setSize();
     $(window).bind("resize", setSize);
-    update("/SUMMARY.md?one=true", "#sidemenu");
-    update(current_path+"?one=true", "#main");
+    update("/SUMMARY.md?one=summary", "#sidemenu-body");
+    update(current_path+"?one=true", "#main-body");
+    $('#sidemenu-body').bind('click',function(e){
+        e.stopImmediatePropagation();
+        current_path = $(e.target).attr('href');
+        return false;
+      })
 })
   </script>
 <style>
-#sidemenu{width:250px;border-right:2px solid #f0f0f0;position:fixed;overflow:scroll;z-index:99;background:#fff}
-#main{max-width:700px;margin-left:280px;z-index:0}
+#sidemenu{font-size:0.9em;width:300px;border-right:2px solid #f0f0f0;position:fixed;overflow:scroll;}
+#main-body{max-width:700px;}
+#sidemenu .active{font-weight:bold;color:#000;border-right:8px solid #900;padding-right:5px}
+#main{margin-left:350px;padding:0}
+#main .filepath{border:none;width:100%%;color:#009;font-size:1.2em}
+#reindex{position:absolute;right:5px;top:5px;padding:0;margin:0}
+
 .doc-style{padding:20px}
 @font-face {
   font-family: octicons-anchor;
@@ -230,18 +256,6 @@ $(function(){
   padding: 0;
   margin-top: 0;
   margin-bottom: 0;
-}
-
-.doc-style ol ol,
-.doc-style ul ol {
-  list-style-type: lower-roman;
-}
-
-.doc-style ul ul ol,
-.doc-style ul ol ol,
-.doc-style ol ul ol,
-.doc-style ol ol ol {
-  list-style-type: lower-alpha;
 }
 
 .doc-style dd {
@@ -704,13 +718,22 @@ $(function(){
     </style>
     </head>
     <body>
-    <div class="doc-style" id="sidemenu"></div>
-    <div class="doc-style" id="main">{{.body}}</div>
+    <div id="sidemenu">
+      <div id="reindex"><button id="reindex_btn" onclick="rebuild_index()">重建索引</button></div>
+      <div class="doc-style" id="sidemenu-body"></div>
+    </div>
+    <div id="main">
+      <input id="current_path_ipt" class="filepath" value="{{.filepath}}" onclick="this.select();" />
+      <div class="doc-style" id="main-body">
+      {{.body}}
+      </div>
+    </div>
     </body>
     </html>`
 
 	v := map[string]interface{}{
-		"body": string(html),
+		"body":     string(html),
+		"filepath": filepath,
 	}
 
 	t, err := template.New("foo").Parse(tpl)
