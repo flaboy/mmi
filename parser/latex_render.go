@@ -5,6 +5,26 @@ import (
 	"github.com/russross/blackfriday"
 )
 
+var listing_lang map[string]bool
+
+func init() {
+	lang := []string{"abap", "acsl", "ada", "algol", "ant", "assembler",
+		"awk", "bash", "basic", "c++", "c", "caml", "clean", "cobol",
+		"comal", "csh", "delphi", "eiffel", "elan", "erlang", "euphoria",
+		"fortran", "gcl", "gnuplot", "haskell", "html", "idl", "inform",
+		"java", "jvmis", "ksh", "lisp", "logo", "lua", "make", "mathematica1",
+		"matlab", "mercury", "metapost", "miranda", "mizar", "ml",
+		"modelica3", "modula-", "mupad", "nastran", "oberon-", "ocl",
+		"octave", "oz", "pascal", "perl", "php", "pl/i", "plasm", "pov",
+		"prolog", "promela", "python", "r", "reduce", "rexx", "rsl",
+		"ruby", "s", "sas", "scilab", "sh", "shelxl", "simula", "sql",
+		"tcl", "tex", "vbscript", "verilog", "vhdl", "vrml", "xml", "xslt"}
+	listing_lang = make(map[string]bool, len(lang))
+	for _, c := range lang {
+		listing_lang[c] = true
+	}
+}
+
 // Latex is a type that implements the Renderer interface for LaTeX output.
 //
 // Do not create this directly, instead use the LatexRenderer function.
@@ -28,21 +48,16 @@ func (options *Latex) GetFlags() int {
 
 // render code chunks using verbatim, or listings if we have a language
 func (options *Latex) BlockCode(out *bytes.Buffer, text []byte, lang string) {
-	if lang == "" {
-		out.WriteString("\n\\begin{verbatim}\n")
-	} else {
+	if _, ok := listing_lang[lang]; ok {
 		out.WriteString("\n\\begin{lstlisting}[language=")
-		if lang == "shell" {
-			lang = "bash"
-		}
 		out.WriteString(lang)
 		out.WriteString("]\n")
-	}
-	out.Write(text)
-	if lang == "" {
-		out.WriteString("\n\\end{verbatim}\n")
-	} else {
+		out.Write(text)
 		out.WriteString("\n\\end{lstlisting}\n")
+	} else {
+		out.WriteString("\n\\begin{verbatim}\n")
+		out.Write(text)
+		out.WriteString("\n\\end{verbatim}\n")
 	}
 }
 
