@@ -11,28 +11,7 @@ import (
 )
 
 func (n *Node) ToLatex() {
-	header := `\documentclass{article}
-\usepackage{xeCJK}
-\usepackage{hyperref}
-\usepackage{listings}
-
-\usepackage[top=1in, bottom=1in, left=1.25in, right=1.25in]{geometry}
-\setCJKmainfont[BoldFont=STZhongsong, ItalicFont=STKaiti]{STSong}
-\setCJKsansfont[BoldFont=STHeiti]{STXihei}
-\setCJKmonofont{STFangsong}
-
-\title{你好，world!}
-\author{Liam}
-\date{\today}
-
-\begin{document}
-\maketitle
-\tableofcontents
-
-`
-	fmt.Println(header)
 	n.to_latex(os.Stdout, &Latex{}, 0)
-	fmt.Println("\n\\end{document}")
 }
 
 func (n *Node) to_latex(out io.Writer, r *Latex, depth int) {
