@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 type (
 	pathway []string
 	Node    struct {
+		workdir  string
 		filepath string
 		Title    string
 		Path     pathway
@@ -35,7 +37,7 @@ const (
 )
 
 func Open(dirname string) Node {
-	return opendir(dirname, pathway{}, []*Node{})
+	return opendir(dirname, pathway{}, []*Node{}, true)
 }
 
 func (n *Node) UpdateRummary(depth int64) {
@@ -181,10 +183,15 @@ func (s *f_sorter) Less(i, j int) bool {
 	return s.i(s.ls[i]) < s.i(s.ls[j])
 }
 
-func opendir(dirname string, p pathway, pn []*Node) Node {
+func opendir(dirname string, p pathway, pn []*Node, is_root bool) Node {
 	flist, err := ioutil.ReadDir(dirname)
 
 	n := Node{Path: p, filepath: dirname}
+
+	if is_root {
+		n.workdir, err = filepath.Abs(dirname)
+	}
+
 	link_node(&n)
 	pn = append(pn, &n)
 
@@ -210,7 +217,7 @@ func opendir(dirname string, p pathway, pn []*Node) Node {
 				if f.Mode().IsDir() {
 					_, err = os.Stat(fpath + "/" + readme_md)
 					if err == nil {
-						new_node := opendir(fpath, subpath, pn)
+						new_node := opendir(fpath, subpath, pn, false)
 						subnode = &new_node
 					}
 				} else if path.Ext(fname) == ".md" {
@@ -220,6 +227,7 @@ func opendir(dirname string, p pathway, pn []*Node) Node {
 				}
 			}
 			if subnode != nil {
+				subnode.workdir = n.workdir
 				subnode.PathNode = pn
 				n.Child = append(n.Child, subnode)
 			}

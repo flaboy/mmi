@@ -10,6 +10,7 @@ import (
 // Do not create this directly, instead use the LatexRenderer function.
 type Latex struct {
 	PageLevel int
+	Path      string
 }
 
 // LatexRenderer creates and configures a Latex object, which
@@ -31,6 +32,9 @@ func (options *Latex) BlockCode(out *bytes.Buffer, text []byte, lang string) {
 		out.WriteString("\n\\begin{verbatim}\n")
 	} else {
 		out.WriteString("\n\\begin{lstlisting}[language=")
+		if lang == "shell" {
+			lang = "bash"
+		}
 		out.WriteString(lang)
 		out.WriteString("]\n")
 	}
@@ -126,12 +130,12 @@ func (options *Latex) Table(out *bytes.Buffer, header []byte, body []byte, colum
 	out.WriteString("\n\\begin{tabular}{")
 	for _, elt := range columnData {
 		switch elt {
-		case blackfriday.TABLE_ALIGNMENT_LEFT:
-			out.WriteByte('l')
+		case blackfriday.TABLE_ALIGNMENT_CENTER:
+			out.WriteByte('c')
 		case blackfriday.TABLE_ALIGNMENT_RIGHT:
 			out.WriteByte('r')
 		default:
-			out.WriteByte('c')
+			out.WriteByte('l')
 		}
 	}
 	out.WriteString("}\n")
@@ -172,12 +176,10 @@ func (options *Latex) FootnoteItem(out *bytes.Buffer, name, text []byte, flags i
 }
 
 func (options *Latex) AutoLink(out *bytes.Buffer, link []byte, kind int) {
-	out.WriteString("\\href{")
+	out.WriteString("\\url{")
 	if kind == blackfriday.LINK_TYPE_EMAIL {
 		out.WriteString("mailto:")
 	}
-	out.Write(link)
-	out.WriteString("}{")
 	out.Write(link)
 	out.WriteString("}")
 }
@@ -204,13 +206,14 @@ func (options *Latex) Image(out *bytes.Buffer, link []byte, title []byte, alt []
 	if bytes.HasPrefix(link, []byte("http://")) || bytes.HasPrefix(link, []byte("https://")) {
 		// treat it like a link
 		out.WriteString("\\href{")
-		out.Write(link)
+		out.Write(bytes.Replace(link, []byte("}"), []byte("\\}"), -1))
 		out.WriteString("}{")
-		out.Write(alt)
+		escapeSpecialChars(out, alt)
 		out.WriteString("}")
 	} else { //todo: pdf rewrite
 		out.WriteString("\\includegraphics{")
-		out.Write(link)
+		out.WriteString(options.Path)
+		out.Write(bytes.Replace(link, []byte("}"), []byte("\\}"), -1))
 		out.WriteString("}")
 	}
 }
@@ -220,11 +223,15 @@ func (options *Latex) LineBreak(out *bytes.Buffer) {
 }
 
 func (options *Latex) Link(out *bytes.Buffer, link []byte, title []byte, content []byte) {
-	out.WriteString("\\href{")
-	out.Write(link)
-	out.WriteString("}{")
-	out.Write(content)
-	out.WriteString("}")
+	if len(link) > 0 && link[0] != '#' {
+		out.WriteString("\\href{")
+		out.Write(bytes.Replace(link, []byte("}"), []byte("\\}"), -1))
+		out.WriteString("}{")
+		escapeSpecialChars(out, content)
+		out.WriteString("}")
+	} else {
+		escapeSpecialChars(out, content)
+	}
 }
 
 func (options *Latex) RawHtmlTag(out *bytes.Buffer, tag []byte) {
@@ -248,7 +255,7 @@ func (options *Latex) FootnoteRef(out *bytes.Buffer, ref []byte, id int) {
 }
 
 func needsBackslash(c byte) bool {
-	for _, r := range []byte("_{}%$&\\~#") {
+	for _, r := range []byte("_{}%$&\\~#^") {
 		if c == r {
 			return true
 		}

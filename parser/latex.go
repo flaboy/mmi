@@ -6,12 +6,33 @@ import (
 	"github.com/russross/blackfriday"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
+	"strings"
 )
 
 func (n *Node) ToLatex() {
+	header := `\documentclass{article}
+\usepackage{xeCJK}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\usepackage[top=1in, bottom=1in, left=1.25in, right=1.25in]{geometry}
+\setCJKmainfont[BoldFont=STZhongsong, ItalicFont=STKaiti]{STSong}
+\setCJKsansfont[BoldFont=STHeiti]{STXihei}
+\setCJKmonofont{STFangsong}
+
+\title{你好，world!}
+\author{Liam}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+`
+	fmt.Println(header)
 	n.to_latex(os.Stdout, &Latex{}, 0)
+	fmt.Println("\n\\end{document}")
 }
 
 func (n *Node) to_latex(out io.Writer, r *Latex, depth int) {
@@ -38,17 +59,25 @@ func (n *Node) to_latex(out io.Writer, r *Latex, depth int) {
 				buf, err := ioutil.ReadAll(fd)
 				fd.Close()
 
-				if buf[0] != '#' {
-					buf = append([]byte("# "), buf...)
-				}
-
-				fmt.Fprintf(out, "%s\n", blackfriday.Markdown(buf, r, extensions))
-
 				if err != nil {
-					log.Println(err)
+					panic(err)
 				}
+				fmt.Fprintln(os.Stderr, n.workdir)
+				r.Path = n.workdir + "/" + strings.Join(n.Path, "/")
+				if r.Path != "" {
+					r.Path += "/"
+				}
+
+				if len(buf) > 0 {
+					if buf[0] != '#' {
+						buf = append([]byte("# "), buf...)
+					}
+
+					fmt.Fprintf(out, "%s\n", blackfriday.Markdown(buf, r, extensions))
+				}
+
 			} else {
-				log.Println(err)
+				fmt.Println(err)
 			}
 		}
 	}
