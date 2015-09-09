@@ -178,7 +178,7 @@ func (options *Latex) TableCell(out *bytes.Buffer, text []byte, align int) {
 	if out.Len() > 0 {
 		out.WriteString(" & ")
 	}
-	out.Write(text)
+	escapeSpecialChars(out, text)
 }
 
 // TODO: this
@@ -207,13 +207,13 @@ func (options *Latex) CodeSpan(out *bytes.Buffer, text []byte) {
 
 func (options *Latex) DoubleEmphasis(out *bytes.Buffer, text []byte) {
 	out.WriteString("\\textbf{")
-	out.Write(text)
+	escapeSpecialChars(out, text)
 	out.WriteString("}")
 }
 
 func (options *Latex) Emphasis(out *bytes.Buffer, text []byte) {
 	out.WriteString("\\textit{")
-	out.Write(text)
+	escapeSpecialChars(out, text)
 	out.WriteString("}")
 }
 
@@ -254,13 +254,13 @@ func (options *Latex) RawHtmlTag(out *bytes.Buffer, tag []byte) {
 
 func (options *Latex) TripleEmphasis(out *bytes.Buffer, text []byte) {
 	out.WriteString("\\textbf{\\textit{")
-	out.Write(text)
+	escapeSpecialChars(out, text)
 	out.WriteString("}}")
 }
 
 func (options *Latex) StrikeThrough(out *bytes.Buffer, text []byte) {
 	out.WriteString("\\sout{")
-	out.Write(text)
+	escapeSpecialChars(out, text)
 	out.WriteString("}")
 }
 
@@ -314,3 +314,4 @@ func (options *Latex) DocumentHeader(out *bytes.Buffer) {
 
 func (options *Latex) DocumentFooter(out *bytes.Buffer) {
 }
+
