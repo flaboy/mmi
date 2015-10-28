@@ -314,3 +314,4 @@ func (options *Latex) DocumentHeader(out *bytes.Buffer) {
 
 func (options *Latex) DocumentFooter(out *bytes.Buffer) {
 }
+
