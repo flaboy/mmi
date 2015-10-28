@@ -126,25 +126,31 @@ func (n *Node) update_summary(depth, st int64) {
 		f.Close()
 	}
 
-	for _, c := range n.Child {
-		if c.IsPage == false {
-			c.update_summary(depth, st+1)
+	depth -= 1
+	if depth > 0 {
+		for _, c := range n.Child {
+			if c.IsPage == false {
+				c.update_summary(depth, st+1)
+			}
 		}
 	}
 }
 
 func (n *Node) TocMarkdown(depth, st int64, prefix string) (s string) {
 	tab := "    "
-	for _, c := range n.Child {
-		filepath := strings.Join(c.Path[st:], "/")
-		if c.IsPage == false {
-			filepath += "/" + readme_md
-		}
+	depth -= 1
+	if depth > 0 {
+		for _, c := range n.Child {
+			filepath := strings.Join(c.Path[st:], "/")
+			if c.IsPage == false {
+				filepath += "/" + readme_md
+			}
 
-		s += fmt.Sprintf("%s1. [%s](%s)\n", prefix, c.Title, filepath)
+			s += fmt.Sprintf("%s1. [%s](%s)\n", prefix, c.Title, filepath)
 
-		if c.IsPage == false {
-			s += c.TocMarkdown(depth-1, st, prefix+tab)
+			if c.IsPage == false {
+				s += c.TocMarkdown(depth, st, prefix+tab)
+			}
 		}
 	}
 	return
@@ -244,6 +250,8 @@ func openfile(file string, p pathway) Node {
 
 func get_title(file string) (title string) {
 	f, err := os.OpenFile(file, os.O_RDONLY, 0644)
+	defer f.Close()
+
 	if err == nil {
 		r := bufio.NewReader(f)
 		l, _ := r.ReadString('\n')

@@ -13,6 +13,7 @@ var (
 	help_mode    bool
 	summary_mode bool
 	latex_mode   bool
+	depth        int64
 	workdir      string
 )
 
@@ -23,6 +24,7 @@ func main() {
 	flag.BoolVar(&latex_mode, "latex", false, "output latex")
 	flag.BoolVar(&server_mode, "server", false, "start server")
 	flag.BoolVar(&help_mode, "help", false, "show help")
+	flag.Int64Var(&depth, "depth", 5, "depth")
 	flag.Parse()
 
 	args := flag.Args()
@@ -49,7 +51,10 @@ func main() {
 	}
 
 	if summary_mode {
-		n.UpdateRummary(5)
+		if depth < 1 {
+			depth = 5
+		}
+		n.UpdateRummary(depth)
 		return
 	}
 
