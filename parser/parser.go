@@ -244,8 +244,11 @@ func opendir(dirname string, p pathway, pn []*Node, is_root bool) Node {
 				if f.Mode().IsDir() {
 					_, err = os.Stat(fpath + "/" + readme_md)
 					if err == nil {
-						new_node := opendir(fpath, subpath, pn, false)
-						subnode = &new_node
+						sub_title := get_title(fpath + "/" + readme_md)
+						if !strings.Contains(sub_title, "(todo)") {
+							new_node := opendir(fpath, subpath, pn, false)
+							subnode = &new_node
+						}
 					}
 				} else if path.Ext(fname) == ".md" {
 					new_node := openfile(fpath, subpath)
