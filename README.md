@@ -30,6 +30,8 @@
 
 * 所有的文件都是Markdown格式. 格式为 ``01.aaa.md``.
 * 子目录也是同样``02.bbb``, 里面要放置一个``02/README.md``, 只有存在``README.md``, mmi才会将这个目录作为文档目录看待.
+* "-summary" 时, 会自动生成 INDEX.md, 为合并README与SUMMARY的子目录索引页面.
+* 文章标题里存在 (todo) 时, 该页面不会被索引.
 
 ![说明图片](struct.png)
 

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -34,6 +35,7 @@ var current_node *Node
 const (
 	readme_md  = "README.md"
 	summary_md = "SUMMARY.md"
+	index_md   = "INDEX.md"
 )
 
 func Open(dirname string) Node {
@@ -112,6 +114,7 @@ func (n *Node) update_summary(depth, st int64) {
 	if err == nil {
 		fmt.Println("[S]", n.filepath+"/"+summary_md)
 	} else {
+		//SUMMARY.md
 		fmt.Println("[U]", n.filepath+"/"+summary_md)
 		f, err := os.OpenFile(n.filepath+"/"+summary_md, os.O_CREATE|os.O_RDWR, 0644)
 
@@ -122,6 +125,24 @@ func (n *Node) update_summary(depth, st int64) {
 		f.Truncate(0)
 		f.WriteString(n.Title)
 		f.WriteString("\n================================================\n\n")
+		f.Write([]byte(n.TocMarkdown(depth, st, "")))
+		f.Close()
+
+		//INDEX.md
+		fmt.Println("[U]", n.filepath+"/"+index_md)
+
+		f_rd, err := os.OpenFile(n.filepath+"/"+readme_md, os.O_RDONLY, 0644)
+		f, err = os.OpenFile(n.filepath+"/"+index_md, os.O_CREATE|os.O_RDWR, 0644)
+
+		f.Truncate(0)
+		io.Copy(f, f_rd)
+		f_rd.Close()
+
+		if err != nil {
+			panic(err)
+		}
+
+		f.WriteString("\n## 目录\n\n")
 		f.Write([]byte(n.TocMarkdown(depth, st, "")))
 		f.Close()
 	}
@@ -143,7 +164,7 @@ func (n *Node) TocMarkdown(depth, st int64, prefix string) (s string) {
 		for _, c := range n.Child {
 			filepath := strings.Join(c.Path[st:], "/")
 			if c.IsPage == false {
-				filepath += "/" + readme_md
+				filepath += "/" + index_md
 			}
 
 			s += fmt.Sprintf("%s1. [%s](%s)\n", prefix, c.Title, filepath)
@@ -219,7 +240,7 @@ func opendir(dirname string, p pathway, pn []*Node, is_root bool) Node {
 			fpath := dirname + "/" + fname
 			subpath := append(p, url.QueryEscape(fname))
 			subnode = nil
-			if fname[0] != '.' && fname != readme_md && fname != summary_md {
+			if fname[0] != '.' && fname != readme_md && fname != summary_md && fname != index_md {
 				if f.Mode().IsDir() {
 					_, err = os.Stat(fpath + "/" + readme_md)
 					if err == nil {
@@ -228,8 +249,10 @@ func opendir(dirname string, p pathway, pn []*Node, is_root bool) Node {
 					}
 				} else if path.Ext(fname) == ".md" {
 					new_node := openfile(fpath, subpath)
-					subnode = &new_node
-					link_node(subnode)
+					if !strings.Contains(new_node.Title, "(todo)") {
+						subnode = &new_node
+						link_node(subnode)
+					}
 				}
 			}
 			if subnode != nil {
